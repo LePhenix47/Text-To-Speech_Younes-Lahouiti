@@ -38,12 +38,63 @@
 
 <body>
     <header class="header">
-        <svg class="hide header__svg-filters"></svg>
-        <h1 class="header__title" title="Title">Title</h1>
+        <h1 class="header__title" title="Title">Text to speech</h1>
     </header>
 
     <main class="index">
 
+        <form class="index__controls-container">
+
+            <fieldset class="index__fieldset">
+                <label class="index__label" for="country">
+                    Country
+                    <select class="index__select" name="country" id="country">
+                        <option value="it">Italy</option>
+                    </select>
+                </label>
+            </fieldset>
+
+            <fieldset class="index__fieldset">
+                <label class="index__label" for="male">
+                    Male
+                    <input type="radio" name="gender" id="male">
+                </label>
+
+                <label class="index__label" for="female">
+                    Female
+                    <input type="radio" name="gender" id="female">
+                </label>
+            </fieldset>
+
+            <fieldset class="index__fieldset">
+                <label class="index__label" for="voice-selection">
+                    Voice selection
+                    <select class="index__select" name="voice-selection" id="voice-selection">
+                        <option value="it">Alex</option>
+                    </select>
+                </label>
+
+
+                <label class="index__label" for="voice-rate">
+                    Voice rate
+                    <input class="index__select" type="range" name="voice-rate" id="voice-rate" />
+                </label>
+                <label class="index__label" for="voice-pitch">
+                    Voice pitch
+                    <input class="index__select" type="range" name="voice-pitch" id="voice-pitch" />
+                </label>
+            </fieldset>
+
+            <label class="index__label" for="text-to-read">
+                <textarea class="index__select" name="text-to-read" id="text-to-read"
+                    placeholder="Add your text here"></textarea>
+            </label>
+
+            <button type="button">Stop</button>
+
+            <button type="button">Speak</button>
+
+        </form>
     </main>
     <footer class="footer">
         <p class="footer__paragraph">
