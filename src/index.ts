@@ -102,25 +102,54 @@ function setSpeechUtterance(e: InputEvent) {
   restartSpeaking();
 }
 
+function toggleSpeech(startOver: boolean) {
+  return () => {
+    stopSpeech();
+
+    if (startOver) {
+      speechSynthesis.speak(speechUtterance);
+    }
+  };
+}
+
 function restartSpeaking() {
   if (!restartCheckboxInput.checked) {
     return;
   }
 
   console.log("Change detected!!!");
+}
 
-  speechSynthesis.cancel();
+function togglePauseButton(e) {
+  console.log(speechSynthesis.speaking, speechSynthesis.paused);
 
-  startSpeaking();
+  const button = e.target as HTMLButtonElement;
+
+  if (!speechSynthesis.speaking && !speechSynthesis.pending) {
+    speechSynthesis.speak(speechUtterance);
+
+    button.textContent = "Pause";
+    return;
+  }
+
+  if (speechSynthesis.paused) {
+    speechSynthesis.resume();
+
+    button.textContent = "Pause";
+  } else {
+    speechSynthesis.cancel();
+
+    button.textContent = "Resume";
+  }
 }
 
 function startSpeaking() {
   speechSynthesis.speak(speechUtterance);
 }
 
-function pauseSpeech() {}
-
-function resumeSpeech() {}
+function stopSpeech() {
+  speechSynthesis.cancel();
+}
 
 function setSpeechUtteranceSettings(e: InputEvent) {
   const { value } = e.target as HTMLInputElement;
@@ -200,6 +229,10 @@ function setSpeechUtteranceSettings(e: InputEvent) {
 }
 
 speechSynthesis.addEventListener("voiceschanged", populateVoicesMap);
+
+speechSynthesis.addEventListener("end", (e) => {
+  console.log("Speech ended", e);
+});
 function populateVoicesMap() {
   const voices: SpeechSynthesisVoice[] = speechSynthesis.getVoices();
 
@@ -224,5 +257,5 @@ function populateVoicesMap() {
   voiceSelectionElement.insertAdjacentHTML("beforeend", options);
 }
 
-startSpeakingButton.addEventListener("click", startSpeaking);
-stopSpeakingButton.addEventListener("click", startSpeaking);
+startSpeakingButton.addEventListener("click", togglePauseButton);
+stopSpeakingButton.addEventListener("click", stopSpeech);
