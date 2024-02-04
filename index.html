@@ -45,7 +45,7 @@
 
         <form class="index__controls-container">
 
-            <fieldset class="index__fieldset">
+            <fieldset class="index__fieldset hide">
                 <label class="index__label" for="country">
                     Country
                     <select class="index__select" name="country" id="country">
@@ -54,7 +54,7 @@
                 </label>
             </fieldset>
 
-            <fieldset class="index__fieldset">
+            <fieldset class="index__fieldset hide">
                 <label class="index__label" for="male">
                     Male
                     <input type="radio" name="gender" id="male">
@@ -68,31 +68,46 @@
 
             <fieldset class="index__fieldset">
                 <label class="index__label" for="voice-selection">
-                    Voice selection
+                    Voice selection:
                     <select class="index__select" name="voice-selection" id="voice-selection">
-                        <option value="it">Alex</option>
                     </select>
                 </label>
 
 
                 <label class="index__label" for="voice-rate">
-                    Voice rate
-                    <input class="index__select" type="range" name="voice-rate" id="voice-rate" />
+                    Voice rate:
+                    <input class="index__select" type="range" name="voice-rate" id="voice-rate" min="0" max="100" />
+                    <output name="voice-rate">5</output>
                 </label>
                 <label class="index__label" for="voice-pitch">
-                    Voice pitch
-                    <input class="index__select" type="range" name="voice-pitch" id="voice-pitch" />
+                    Voice pitch:
+                    <input class="index__select" type="range" name="voice-pitch" id="voice-pitch" min="0" max="100" />
+                    <output name="voice-pitch">1</output>
+                </label>
+                <label class="index__label" for="voice-volume">
+                    Voice volume:
+                    <input class="index__select" type="range" name="voice-volume" id="voice-volume" min="0" max="100" />
+                    <output name="voice-volume">0.5</output>
                 </label>
             </fieldset>
 
-            <label class="index__label" for="text-to-read">
-                <textarea class="index__select" name="text-to-read" id="text-to-read"
-                    placeholder="Add your text here"></textarea>
-            </label>
+            <fieldset class="index__fieldset">
+                <label class="index__label" for="text-to-read">
+                    <textarea class="index__select" name="text-to-read" id="text-to-read"
+                        placeholder="Add your text here"></textarea>
+                </label>
+                <label class="index__label" for="restart-on-change">
+                    Restart on settings change:
+                    <input type="checkbox" name="restart-on-change" id="restart-on-change" />
+                </label>
+            </fieldset>
 
-            <button type="button">Stop</button>
+            <fieldset class="index__fieldset">
+                <button class="index__button" name="start-speaking" type="button">Start</button>
+                <button class="index__button" name="stop-speaking" type="button">Stop</button>
+            </fieldset>
 
-            <button type="button">Speak</button>
+
 
         </form>
     </main>

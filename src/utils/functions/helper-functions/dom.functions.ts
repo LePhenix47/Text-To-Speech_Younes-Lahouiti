@@ -1,37 +1,63 @@
-
 /**
  * Simpler version of `document.getElementsByClassName()`
  * Selects all elements with a given class name inside a given container or the whole document.
  *
  * @param {string} className - The class name of the elements to select.
- * @param {any} container - The parent element to search within.
+ * @param {any} container - The parent element to search within (default: document).
  *
  * @returns {HTMLElement[]|[]} A collection of elements with the specified class name.
  */
-export function selectByClass(
+export function selectByClass<T extends HTMLElement | SVGElement>(
   className: string,
-  container?: any
-): HTMLElement[] | [] {
-  const hasNoParentContainer: boolean = !container;
+  container: any = document
+): T[] | [] {
+  const hasNoParentContainer: boolean = container === document;
   if (hasNoParentContainer) {
-    return Array.from(
-      document.getElementsByClassName(className)
-    ) as HTMLElement[];
+    return Array.from(document.getElementsByClassName(className)) as T[];
   }
 
-  /**
-   * We check if it's a web component, they always have a hyphen in their tag name
-   */
-  const containerIsWebComponent: boolean = container?.tagName?.includes("-");
+  switch (true) {
+    case container.tagName?.includes("-"): {
+      // Web component
+      return Array.from(
+        container.shadowRoot?.getElementsByClassName(className) || []
+      ) as T[];
+    }
+    case container instanceof HTMLTemplateElement: {
+      // Template element
+      return Array.from(
+        document.importNode(container.content, true).querySelectorAll(className)
+      ) as T[];
+    }
 
-  if (containerIsWebComponent) {
-    return Array.from(
-      container.shadowRoot.getElementsByClassName(className)
-    ) as HTMLElement[];
+    case container instanceof HTMLIFrameElement: {
+      // Iframe
+      return Array.from(
+        container.contentDocument?.getElementsByClassName(className) || []
+      ) as T[];
+    }
+    default:
+      return Array.from(container.getElementsByClassName(className)) as T[];
   }
-  return Array.from(
-    container.getElementsByClassName(className)
-  ) as HTMLElement[];
+}
+
+/**
+ * Selects the first element with the specified class name within the given container.
+ *
+ * @template T - The generic type of element to select (HTMLElement or SVGElement).
+ *
+ * @param {string} className - The class name of the element to select.
+ *
+ * @param {HTMLElement | ShadowRoot | undefined} [container] - The container element to search within (default: document).
+ *
+ * @returns {T | null} - The selected element or null if not found.
+ *
+ */
+export function selectFirstByClass<T extends HTMLElement | SVGElement>(
+  className: string,
+  container: any = document
+): T | null {
+  return selectByClass<T>(className, container)[0] || null;
 }
 
 /**
@@ -39,76 +65,105 @@ export function selectByClass(
  * Selects an element with a given ID inside a given container or the whole document.
  *
  * @param {string} id - The ID of the element to select.
- * @param {any} container - The parent element to search within.
+ * @param {any} container - The parent element to search within (default: document).
  *
  * @returns {HTMLElement} The element with the specified ID.
  */
-export function selectById(id: string, container?: any): HTMLElement {
-  const hasNoParentContainer: boolean = !container;
+export function selectById<T extends HTMLElement | SVGElement>(
+  id: string,
+  container: any = document
+): T | null {
+  const hasNoParentContainer: boolean = container === document;
   if (hasNoParentContainer) {
-    return document.getElementById(id);
+    return document.getElementById(id) as T | null;
   }
 
-  /**
-   * We check if it's a web component, they always have a hyphen in their tag name
-   */
-  const containerIsWebComponent: boolean = container?.tagName?.includes("-");
+  switch (true) {
+    case container.tagName?.includes("-"): // Web component
+      return container.shadowRoot?.getElementById(id) as T | null;
 
-  if (containerIsWebComponent) {
-    return container.shadowRoot.getElementById(id);
+    case container instanceof HTMLTemplateElement: // Template element
+      return document
+        .importNode(container.content, true)
+        .getElementById(id) as T | null;
+
+    case container instanceof HTMLIFrameElement: // Iframe
+      return container.contentDocument?.getElementById(id) as T | null;
+
+    default:
+      return container.getElementById(id) as T | null;
   }
-  return container.getElementById(id);
 }
 
 /**
  * A simplified version of `document.querySelector()`
  *
  * @param {string} query - CSS query of the HTML Element to select
- * @param {any} container - HTML Element to select the query from
+ * @param {any} container - HTML Element to select the query from (default: document).
  *
  * @returns {HTMLElement} - The element selected or `null` if the element doesn't exist
  */
-
-export function selectQuery(query: string, container?: any): HTMLElement {
-  const hasNoParentContainer: boolean = !container;
+export function selectQuery<T extends HTMLElement | SVGElement>(
+  query: string,
+  container: any = document
+): T | null {
+  const hasNoParentContainer: boolean = container === document;
   if (hasNoParentContainer) {
-    return document.querySelector(query);
-  }
-  /**
-   * We check if it's a web component, they always have a hyphen in their tag name
-   */
-  const containerIsWebComponent: boolean = container?.tagName?.includes("-");
-
-  if (containerIsWebComponent) {
-    return container.shadowRoot.querySelector(query);
+    return document.querySelector(query) as T | null;
   }
 
-  return container.querySelector(query);
+  switch (true) {
+    case container.tagName?.includes("-"): // Web component
+      return container.shadowRoot?.querySelector(query) as T | null;
+
+    case container instanceof HTMLTemplateElement: // Template element
+      return document
+        .importNode(container.content, true)
+        .querySelector(query) as T | null;
+
+    case container instanceof HTMLIFrameElement: // Iframe
+      return container.contentDocument?.querySelector(query) as T | null;
+
+    default:
+      return container.querySelector(query) as T | null;
+  }
 }
 
 /**
  * A simplified version of `document.querySelectorAll()`
  *
  * @param {string} query - CSS query of the HTML Elements to select
- * @param {any} container - HTML Element to select the query from
- * @returns {HTMLElement[] | []} - An array with all the elements selected or `null` if the element doesn't exist
+ * @param {any} container - HTML Element to select the query from (default: document).
+ * @returns {HTMLElement[]} - An array with all the elements selected or `null` if the element doesn't exist
  */
-export function selectQueryAll(
+export function selectQueryAll<T extends HTMLElement | SVGElement>(
   query: string,
-  container?: any
-): HTMLElement[] | [] {
-  const hasNoParentContainer: boolean = !container;
+  container: any = document
+): T[] {
+  const hasNoParentContainer: boolean = container === document;
   if (hasNoParentContainer) {
-    return Array.from(document.querySelectorAll(query));
+    return Array.from(document.querySelectorAll(query)) as T[];
   }
 
-  const isWebComponent: boolean = container.tagName.includes("-");
+  switch (true) {
+    case container.tagName?.includes("-"): // Web component
+      return Array.from(
+        container.shadowRoot?.querySelectorAll(query) || []
+      ) as T[];
 
-  if (isWebComponent) {
-    return Array.from(container.shadowRoot.querySelectorAll(query));
+    case container instanceof HTMLTemplateElement: // Template element
+      return Array.from(
+        document.importNode(container.content, true).querySelectorAll(query)
+      ) as T[];
+
+    case container instanceof HTMLIFrameElement: // Iframe
+      return Array.from(
+        container.contentDocument?.querySelectorAll(query) || []
+      ) as T[];
+
+    default:
+      return Array.from(container.querySelectorAll(query)) as T[];
   }
-
-  return Array.from(container.querySelectorAll(query));
 }
 
 /**
@@ -117,7 +172,9 @@ export function selectQueryAll(
  * @param {HTMLElement} elementOfReference The parent HTML element whose children to select.
  * @returns {HTMLElement[]} An array containing all child nodes of the parent element or null if the parent element has no children.
  */
-export function getChildren(elementOfReference: any | null): HTMLElement[] {
+export function getChildren<TChildren extends HTMLElement | SVGElement>(
+  elementOfReference: any | null
+): TChildren[] {
   return Array.from(elementOfReference.children);
 }
 
@@ -126,8 +183,34 @@ export function getChildren(elementOfReference: any | null): HTMLElement[] {
  * @param {HTMLElement} elementOfReference - The child element for which to find the parent.
  * @returns {HTMLElement} - The parent element of the child element, or null if the parent cannot be found.
  */
-export function getParent(elementOfReference: HTMLElement): HTMLElement {
-  return elementOfReference.parentElement;
+export function getParent<T extends HTMLElement>(
+  elementOfReference: HTMLElement
+): T {
+  return elementOfReference.parentElement as T;
+}
+
+/**
+ * Creates a deep clone of an HTML element.
+ *
+ * @param {HTMLElement | SVGElement} elementOfReference - The HTML element to clone.
+ * @returns {HTMLElement | SVGElement} - A deep clone of the provided HTML element.
+ */
+export function getClone<T extends HTMLElement | SVGElement>(
+  elementOfReference: T
+): T {
+  return elementOfReference.cloneNode(true) as T;
+}
+
+/**
+ * Get the content of a template element as a `DocumentFragment`
+ *
+ * @param {HTMLTemplateElement} template - The template element
+ * @returns {DocumentFragment} - The content of the template as a `DocumentFragment`
+ */
+export function getContentOfTemplate(
+  template: HTMLTemplateElement
+): DocumentFragment {
+  return document.importNode(template.content, true);
 }
 
 /**
@@ -139,11 +222,11 @@ export function getParent(elementOfReference: HTMLElement): HTMLElement {
  * @returns {HTMLElement|null} The closest ancestor element that matches the CSS selector, or null if no ancestor element matches the selector.
  */
 
-export function getAncestor(
+export function getAncestor<T extends HTMLElement | SVGElement>(
   elementOfReference: HTMLElement,
   cssSelector: string
-): HTMLElement | null {
-  return elementOfReference.closest(cssSelector);
+): T | null {
+  return elementOfReference.closest(cssSelector) as T;
 }
 
 /**
@@ -191,6 +274,22 @@ export function getClassListValues(elementOfReference: HTMLElement): string[] {
 }
 
 /**
+ * Get the computed style property value of an HTML element.
+ *
+ * @param {string} property - The name of the CSS property to retrieve.
+ * @param {HTMLElement} [element=document.body] - The HTML element to get the style property from.
+ *                                                Defaults to the `document.body` if not specified.
+ * @returns {string} The value of the specified CSS property for the given element.
+ */
+export function getStyleProperty(
+  property: string,
+  element: HTMLElement = document.body
+): string {
+  const computedStyle: CSSStyleDeclaration = getComputedStyle(element);
+  return computedStyle.getPropertyValue(property);
+}
+
+/**
  * Sets the value of a specified CSS property for the given HTML element.
  *
  * @param {string} property - The name of the style property to set.
@@ -235,7 +334,21 @@ export function replaceChildInParent(
   oldChild: HTMLElement
 ): void {
   oldChild.remove();
-  appendChildToParent(newChild, parentElement);
+  parentElement.appendChild(newChild);
+}
+
+/**
+ * Removes a child element from its parent.
+ *
+ * @param {HTMLElement} parentElement - The parent element from which to remove the child.
+ * @param {HTMLElement} childToRemove - The child element to be removed from the parent.
+ * @returns {void}
+ */
+export function removeChildInParent(
+  parentElement: HTMLElement,
+  childToRemove: HTMLElement
+): void {
+  parentElement.removeChild(childToRemove);
 }
 
 /**
@@ -245,7 +358,7 @@ export function replaceChildInParent(
  * @param {string} property The name of the attribute to add
  * @param {any} value The value to set the attribute to
  */
-export function modifyAttribute(
+export function setAttributeFrom(
   property: string,
   value: any,
   element: HTMLElement
@@ -261,7 +374,7 @@ export function modifyAttribute(
  *
  * @returns {string} The value of the attribute
  */
-export function getAttribute(
+export function getAttributeFrom(
   attributeName: string,
   element: HTMLElement
 ): string {
