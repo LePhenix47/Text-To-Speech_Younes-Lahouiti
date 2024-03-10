@@ -1,7 +1,7 @@
 {
-  "name": "skeleton",
+  "name": "Text to speech",
   "version": "1.0.0",
-  "description": "Small TS-SASS compiled with Webpack project skeleton",
+  "description": "Small text to speech application",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -11,7 +11,8 @@
     "HTML",
     "SASS",
     "TypeScript",
-    "web application"
+    "web application",
+    "text-to-speech"
   ],
   "author": "Younes LAHOUITI",
   "devDependencies": {
