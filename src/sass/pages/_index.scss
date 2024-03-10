@@ -1,8 +1,6 @@
 @use "../utils/" as *;
 
 .index {
-    padding: 15px;
-
     background:
         radial-gradient(circle, transparent 20%, var(--bg-secondary) 20%, var(--bg-secondary) 80%, transparent 80%, transparent),
         radial-gradient(circle, transparent 20%, var(--bg-secondary) 20%, var(--bg-secondary) 80%, transparent 80%, transparent) 30px 30px,
@@ -12,12 +10,17 @@
     background-repeat: repeat;
     background-size: 60px 60px, 60px 60px, 30px 30px, 30px 30px;
 
-    min-height: 50svh;
+    height: 80svh;
     @include center-flex;
 
+    // padding: 15px;
+
+    @include mobile-only {}
 
     &__controls-container {
         @include center-flex-column(15px);
+
+        width: 80%;
 
         padding: 15px;
 
@@ -25,12 +28,57 @@
 
         border: 2px solid currentColor;
         border-radius: 10px;
+
+        @include mobile-only {
+            width: 90%;
+            height: 90%;
+        }
     }
 
     &__fieldset {
-        @include center-flex-column(10px);
+        @include center-flex-column(35px);
 
         width: 100%;
+
+        flex-wrap: wrap;
+
+        &--buttons {
+            flex-direction: row;
+        }
+    }
+
+    &__select {
+        border: 2px solid currentColor;
+        border-radius: 10px;
+    }
+
+    &__label {
+        display: inline-flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 15px;
+
+        position: relative;
+
+        &--restart {
+            flex-direction: row;
+        }
+    }
+
+    &__input {}
+
+    &__output {
+        position: absolute;
+        right: 0;
+    }
+
+    &__textarea {
+        padding: 10px;
+        border-radius: 5px;
+
+        outline: 2px solid currentColor;
+
+        width: auto;
     }
 
 
