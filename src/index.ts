@@ -70,7 +70,7 @@ const outputElementsMap: Map<
 
 const voicesByLanguageMap = new Map<string, SpeechSynthesisVoice[]>();
 
-function populateOutputElementsMap() {
+function populateOutputElementsMap(): void {
   for (let i = 0; i < inputElements.length; i++) {
     outputElementsMap.set(inputElements[i], outputElements[i]);
   }
@@ -78,8 +78,8 @@ function populateOutputElementsMap() {
 populateOutputElementsMap();
 
 // * Event listeners
-function fixInputRangeBackground() {
-  const inputsWithThumbArray = document.querySelectorAll<HTMLInputElement>(
+function fixInputRangeBackground(): void {
+  const inputsWithThumbArray = selectQueryAll<HTMLInputElement>(
     `input[type="range"][data-range="a-range-with-overflowing-thumb"]`
   );
 
@@ -101,14 +101,14 @@ function fixInputRangeBackground() {
 
 fixInputRangeBackground();
 
-function addInputsEventListeners() {
+function addInputsEventListeners(): void {
   for (const element of inputElements) {
     element.addEventListener("change", setSpeechUtterance);
     element.addEventListener("input", setSpeechUtteranceSettings);
   }
 }
 addInputsEventListeners();
-function getChosenVoice(value: string) {
+function getChosenVoice(value: string): SpeechSynthesisVoice {
   const frenchVoicesArray: SpeechSynthesisVoice[] =
     voicesByLanguageMap.get("fr-FR");
 
@@ -125,7 +125,7 @@ function setSpeechUtterance(e: InputEvent) {
   restartSpeaking();
 }
 
-function toggleSpeech(startOver: boolean) {
+function toggleSpeech(startOver: boolean): () => void {
   return () => {
     stopSpeech();
 
@@ -135,17 +135,13 @@ function toggleSpeech(startOver: boolean) {
   };
 }
 
-function restartSpeaking() {
+function restartSpeaking(): void {
   if (!restartCheckboxInput.checked) {
     return;
   }
-
-  console.log("Change detected!!!");
 }
 
-function togglePauseButton(e) {
-  console.log(speechSynthesis.speaking, speechSynthesis.paused);
-
+function togglePauseButton(e: MouseEvent): void {
   const button = e.target as HTMLButtonElement;
 
   if (!speechSynthesis.speaking && !speechSynthesis.pending) {
@@ -166,22 +162,20 @@ function togglePauseButton(e) {
   }
 }
 
-function startSpeaking() {
+function startSpeaking(): void {
   speechSynthesis.speak(speechUtterance);
 }
 
-function stopSpeech() {
+function stopSpeech(): void {
   speechSynthesis.cancel();
 }
 
-function setSpeechUtteranceSettings(e: InputEvent) {
+function setSpeechUtteranceSettings(e: InputEvent): void {
   const { value } = e.target as HTMLInputElement;
 
   switch (e.target) {
     case textAreaElement: {
       speechUtterance.text = value;
-
-      console.log("text:", speechUtterance.text);
 
       break;
     }
@@ -189,8 +183,6 @@ function setSpeechUtteranceSettings(e: InputEvent) {
       const chosenVoice: SpeechSynthesisVoice = getChosenVoice(value);
 
       speechUtterance.voice = chosenVoice;
-
-      console.log("voice:", chosenVoice);
 
       break;
     }
@@ -207,8 +199,6 @@ function setSpeechUtteranceSettings(e: InputEvent) {
 
       output.textContent = normalizedValue.toString();
 
-      console.log("rate:", speechUtterance.rate);
-
       break;
     }
     case voicePitchInputElement: {
@@ -222,8 +212,6 @@ function setSpeechUtteranceSettings(e: InputEvent) {
       );
 
       output.textContent = normalizedValue.toString();
-
-      console.log("pitch:", speechUtterance.pitch);
 
       break;
     }
@@ -240,23 +228,17 @@ function setSpeechUtteranceSettings(e: InputEvent) {
 
       output.textContent = `${value}%`;
 
-      console.log("volume:", speechUtterance.volume);
-
       break;
     }
     default:
-      console.log("Bruv there was no HTML element");
-
       break;
   }
 }
 
 speechSynthesis.addEventListener("voiceschanged", populateVoicesMap);
 
-speechSynthesis.addEventListener("end", (e) => {
-  console.log("Speech ended", e);
-});
-function populateVoicesMap() {
+speechSynthesis.addEventListener("end", (e) => {});
+function populateVoicesMap(): void {
   const voices: SpeechSynthesisVoice[] = speechSynthesis.getVoices();
 
   let options: string = "";
