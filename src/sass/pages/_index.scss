@@ -1,14 +1,30 @@
 @use "../utils/" as *;
 
 .index {
+    padding: 15px;
+
+    background:
+        radial-gradient(circle, transparent 20%, var(--bg-secondary) 20%, var(--bg-secondary) 80%, transparent 80%, transparent),
+        radial-gradient(circle, transparent 20%, var(--bg-secondary) 20%, var(--bg-secondary) 80%, transparent 80%, transparent) 30px 30px,
+        linear-gradient(#d5d5d5 2.4px, transparent 2.4px) 0 -1.2px,
+        linear-gradient(90deg, #d5d5d5 2.4px, var(--bg-secondary) 2.4px) -1.2px 0, var(--bg-secondary);
+
+    background-repeat: repeat;
+    background-size: 60px 60px, 60px 60px, 30px 30px, 30px 30px;
+
     min-height: 50svh;
-
-
     @include center-flex;
 
 
     &__controls-container {
         @include center-flex-column(15px);
+
+        padding: 15px;
+
+        backdrop-filter: blur(5px);
+
+        border: 2px solid currentColor;
+        border-radius: 10px;
     }
 
     &__fieldset {

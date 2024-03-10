@@ -78,6 +78,29 @@ function populateOutputElementsMap() {
 populateOutputElementsMap();
 
 // * Event listeners
+function fixInputRangeBackground() {
+  const inputsWithThumbArray = document.querySelectorAll<HTMLInputElement>(
+    `input[type="range"][data-range="a-range-with-overflowing-thumb"]`
+  );
+
+  for (const input of inputsWithThumbArray) {
+    input.addEventListener("input", (e) => {
+      const input = e.currentTarget as HTMLInputElement;
+      const { min, max, valueAsNumber } = input;
+
+      const percentage: number = Math.round(
+        (valueAsNumber / Number(max)) * 100
+      );
+
+      const stringResult: string = `${percentage}%`;
+
+      input.style.setProperty("--_webkit-progression-width", stringResult);
+    });
+  }
+}
+
+fixInputRangeBackground();
+
 function addInputsEventListeners() {
   for (const element of inputElements) {
     element.addEventListener("change", setSpeechUtterance);
