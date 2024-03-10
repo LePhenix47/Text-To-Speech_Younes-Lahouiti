@@ -20,6 +20,7 @@
             background-color: var(--_scrollbar-bg);
             border-radius: var(--_scrollbar-border-radius);
 
+
             width: var(--_scrollbar-width);
             margin-block: var(--_scrollbar-margin-block);
         }
@@ -51,11 +52,17 @@
             border-top: none;
             border-left: none;
         }
+
     }
 
     // FIX: Move the Firefox scrollbar styling inside this selector
-    @supports (scrollbar-color: var(--_scrollbar-thumb-bg) var(--_scrollbar-bg)) {
+    @supports (scrollbar-color: black white) and (not selector(::-webkit-scrollbar)) {
         * {
+            --_scrollbar-bg: transparent;
+            --_scrollbar-thumb-bg: var(--bg-secondary);
+            --_scrollbar-thumb-bg-hover: var(--bg-secondary);
+            --_scrollbar-thumb-bg-active: var(--bg-secondary);
+
             scrollbar-width: var(--_scrollbar-moz-width);
             scrollbar-color: var(--_scrollbar-thumb-bg) var(--_scrollbar-bg);
         }
