@@ -1,12 +1,17 @@
 /**
  * Utility class encapsulating the Web Speech API's Text-to-Speech functionality, offering enhanced developer convenience and customizability.
  * @example
- * import TextToSpeech from '@lephenix-47/text-to-speech';
+ * import { TextToSpeech } from '@lephenix-47/text-to-speech-utility';
  *
  * const ttsInstance = new TextToSpeech();
+ *
+ * const voices = ttsInstance.getAvailableVoices()
+ *
  * ttsInstance
  *   .setVoiceRate(1)
+ *   .setVoiceSpeech(voices[0])
  *   .setText('Hello World!');
+ *
  * ttsInstance.speak();
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis
@@ -25,22 +30,42 @@ class TextToSpeech {
   }
 
   /**
+   * Clamps a value between a minimum and maximum range.
+   *
+   * @param {number} min - The minimum value of the range.
+   * @param {number} value - The value to be clamped.
+   * @param {number} max - The maximum value of the range.
+   * @returns {number} - The clamped value.
+   *
+   * @private
+   */
+  private clamp(min: number, value: number, max: number): number {
+    // * We avoid underflowing
+    const minClampedValue = Math.max(value, min);
+
+    // * We avoid overflowing
+    const fullyClampedValue = Math.min(minClampedValue, max);
+
+    return fullyClampedValue;
+  }
+
+  /**
    * Set voice rate.
    * @param {number} rate - Rate value (0 - 10).
-   * @returns The current instance of TextToSpeech for method chaining.
+   * @returns The current instance of `TextToSpeech` for method chaining.
    */
   setVoiceRate = (rate: number): TextToSpeech => {
-    this.utterance.rate = rate;
+    this.utterance.rate = this.clamp(0, rate, 10);
     return this;
   };
 
   /**
    * Set voice pitch.
    * @param {number} pitch - Pitch value (0 - 3).
-   * @returns The current instance of TextToSpeech for method chaining.
+   * @returns The current instance of `TextToSpeech` for method chaining.
    */
   setVoicePitch = (pitch: number): TextToSpeech => {
-    this.utterance.pitch = pitch;
+    this.utterance.pitch = this.clamp(0, pitch, 3);
 
     return this;
   };
@@ -48,10 +73,10 @@ class TextToSpeech {
   /**
    * Set volume level.
    * @param volumeLevel - Volume level (0 - 1).
-   * @returns The current instance of TextToSpeech for method chaining.
+   * @returns The current instance of `TextToSpeech` for method chaining.
    */
   setVolume = (volumeLevel: number): TextToSpeech => {
-    this.utterance.volume = volumeLevel;
+    this.utterance.volume = this.clamp(0, volumeLevel, 1);
 
     return this;
   };
@@ -59,7 +84,7 @@ class TextToSpeech {
   /**
    * Set language.
    * @param {string} languageCode - Language code (e.g., 'en-US').
-   * @returns The current instance of TextToSpeech for method chaining.
+   * @returns The current instance of `TextToSpeech` for method chaining.
    */
   setLanguage = (languageCode: string): TextToSpeech => {
     this.utterance.lang = languageCode;
@@ -69,8 +94,8 @@ class TextToSpeech {
 
   /**
    * Set voice speech.
-   * @param {SpeechSynthesisVoice} voiceObject - SpeechSynthesisVoice object.
-   * @returns The current instance of TextToSpeech for method chaining.
+   * @param {SpeechSynthesisVoice} voiceObject - `SpeechSynthesisVoice` object.
+   * @returns The current instance of `TextToSpeech` for method chaining.
    */
   setVoiceSpeech = (voiceObject: SpeechSynthesisVoice): TextToSpeech => {
     this.utterance.voice = voiceObject;
@@ -83,7 +108,7 @@ class TextToSpeech {
    *
    * @param {string} utteranceText - The text to be spoken.
    *
-   * @returns {TextToSpeech} - The current instance of TextToSpeech for method chaining.
+   * @returns {TextToSpeech} - The current instance of `TextToSpeech` for method chaining.
    */
   setVoiceTest = (utteranceText: string): TextToSpeech => {
     this.utterance.text = utteranceText;
