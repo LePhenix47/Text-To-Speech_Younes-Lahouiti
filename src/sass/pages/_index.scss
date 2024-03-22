@@ -10,8 +10,10 @@
     background-repeat: repeat;
     background-size: 60px 60px, 60px 60px, 30px 30px, 30px 30px;
 
-    height: 80svh;
+    min-height: 80svh;
     @include center-flex;
+
+    padding-block: 25px;
 
     // padding: 15px;
 

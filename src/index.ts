@@ -2,13 +2,20 @@
 import {
   selectQuery,
   selectQueryAll,
+  setStyleProperty,
 } from "@utils/functions/helper-functions/dom.functions";
 
 import "./components/web-component.component";
 
-const textAreaElement = selectQuery<HTMLTextAreaElement>("textarea");
+import { Options } from "@utils/types/options.types";
+import { OptionsMaxValues } from "@utils/variables/enums.variables";
 
-const speechUtterance = new SpeechSynthesisUtterance();
+import { WebStorage } from "@lephenix47/webstorage-utility";
+import { TextToSpeech } from "@lephenix47/text-to-speech-utility";
+
+const textToSpeechUtility = new TextToSpeech();
+
+const textAreaElement = selectQuery<HTMLTextAreaElement>("textarea");
 
 const voiceSelectionElement = selectQuery<HTMLSelectElement>(
   "select#voice-selection"
@@ -77,6 +84,23 @@ function populateOutputElementsMap(): void {
 }
 populateOutputElementsMap();
 
+function checkIfDefaultValuesAreSetInLocalStorage(): void {
+  const options: Options = WebStorage.getKey<Options>("text-to-speech-options");
+  if (options) {
+    return;
+  }
+
+  const defaultOptions: Options = {
+    pitch: 1,
+    rate: 1,
+    volume: 1,
+    text: "",
+  };
+
+  WebStorage.setKey("text-to-speech-options", defaultOptions);
+}
+checkIfDefaultValuesAreSetInLocalStorage();
+
 // * Event listeners
 function fixInputRangeBackground(): void {
   const inputsWithThumbArray = selectQueryAll<HTMLInputElement>(
@@ -86,7 +110,7 @@ function fixInputRangeBackground(): void {
   for (const input of inputsWithThumbArray) {
     input.addEventListener("input", (e) => {
       const input = e.currentTarget as HTMLInputElement;
-      const { min, max, valueAsNumber } = input;
+      const { max, valueAsNumber } = input;
 
       const percentage: number = Math.round(
         (valueAsNumber / Number(max)) * 100
@@ -103,16 +127,89 @@ fixInputRangeBackground();
 
 function addInputsEventListeners(): void {
   for (const element of inputElements) {
+    setDefaultValueIfPossible(element);
+
     element.addEventListener("change", setSpeechUtterance);
     element.addEventListener("input", setSpeechUtteranceSettings);
   }
 }
 addInputsEventListeners();
-function getChosenVoice(value: string): SpeechSynthesisVoice {
-  const frenchVoicesArray: SpeechSynthesisVoice[] =
-    voicesByLanguageMap.get("fr-FR");
 
-  const chosenVoice: SpeechSynthesisVoice = frenchVoicesArray.find((voice) => {
+function setDefaultValueIfPossible(
+  element: HTMLTextAreaElement | HTMLSelectElement | HTMLInputElement
+): void {
+  const { rate, pitch, text, volume } = WebStorage.getKey<Options>(
+    "text-to-speech-options"
+  );
+
+  if (element instanceof HTMLSelectElement) {
+    return;
+  }
+
+  let defaultValue = null;
+
+  switch (element.name) {
+    case "voice-rate": {
+      const output = outputElementsMap.get(element);
+      output.textContent = rate.toString();
+
+      defaultValue = (rate / OptionsMaxValues.rate) * 100;
+
+      setStyleProperty(
+        "--_webkit-progression-width",
+        `${defaultValue}%`,
+        element
+      );
+      break;
+    }
+    case "voice-pitch": {
+      const output = outputElementsMap.get(element);
+      output.textContent = pitch.toString();
+
+      defaultValue = (pitch / OptionsMaxValues.pitch) * 100;
+
+      setStyleProperty(
+        "--_webkit-progression-width",
+        `${defaultValue}%`,
+        element
+      );
+      break;
+    }
+    case "voice-volume": {
+      const output = outputElementsMap.get(element);
+
+      defaultValue = Math.round(volume * 100);
+
+      output.textContent = `${defaultValue}%`;
+
+      setStyleProperty(
+        "--_webkit-progression-width",
+        `${defaultValue}%`,
+        element
+      );
+      break;
+    }
+    case "text-to-read": {
+      defaultValue = text;
+      break;
+    }
+
+    default: {
+      throw new Error("Unknown property to change");
+    }
+  }
+
+  console.log(element.name, { defaultValue });
+
+  element.value = defaultValue;
+}
+
+function getChosenVoice(value: string): SpeechSynthesisVoice {
+  const voicesArray: SpeechSynthesisVoice[] = voicesByLanguageMap.get(
+    navigator.language
+  );
+
+  const chosenVoice: SpeechSynthesisVoice = voicesArray.find((voice) => {
     return voice.name === value;
   });
 
@@ -125,16 +222,6 @@ function setSpeechUtterance(e: InputEvent) {
   restartSpeaking();
 }
 
-function toggleSpeech(startOver: boolean): () => void {
-  return () => {
-    stopSpeech();
-
-    if (startOver) {
-      speechSynthesis.speak(speechUtterance);
-    }
-  };
-}
-
 function restartSpeaking(): void {
   if (!restartCheckboxInput.checked) {
     return;
@@ -144,54 +231,55 @@ function restartSpeaking(): void {
 function togglePauseButton(e: MouseEvent): void {
   const button = e.target as HTMLButtonElement;
 
-  if (!speechSynthesis.speaking && !speechSynthesis.pending) {
-    speechSynthesis.speak(speechUtterance);
+  const { isPaused, isSpeaking, isPending } = textToSpeechUtility;
+
+  if (!isSpeaking && !isPending) {
+    textToSpeechUtility.speak();
 
     button.textContent = "Pause";
     return;
   }
 
-  if (speechSynthesis.paused) {
-    speechSynthesis.resume();
+  if (isPaused) {
+    textToSpeechUtility.resumeSpeech();
 
     button.textContent = "Pause";
   } else {
-    speechSynthesis.cancel();
+    textToSpeechUtility.cancelSpeech();
 
     button.textContent = "Resume";
   }
 }
 
-function startSpeaking(): void {
-  speechSynthesis.speak(speechUtterance);
-}
-
 function stopSpeech(): void {
-  speechSynthesis.cancel();
+  textToSpeechUtility.cancelSpeech();
 }
 
 function setSpeechUtteranceSettings(e: InputEvent): void {
-  const { value } = e.target as HTMLInputElement;
+  const { value, valueAsNumber } = e.target as HTMLInputElement;
+
+  const options = WebStorage.getKey<Options>("text-to-speech-options");
 
   switch (e.target) {
     case textAreaElement: {
-      speechUtterance.text = value;
+      options.text = value;
+      textToSpeechUtility.setVoiceText(value);
 
       break;
     }
     case voiceSelectionElement: {
       const chosenVoice: SpeechSynthesisVoice = getChosenVoice(value);
 
-      speechUtterance.voice = chosenVoice;
+      textToSpeechUtility.setVoiceSpeech(chosenVoice);
 
       break;
     }
     case voiceRateInputElement: {
-      const MAX_SPEECH_RATE: number = 10;
+      const normalizedValue: number =
+        (valueAsNumber * OptionsMaxValues.rate) / 100;
 
-      const normalizedValue: number = (Number(value) * MAX_SPEECH_RATE) / 100;
-
-      speechUtterance.rate = normalizedValue;
+      options.rate = normalizedValue;
+      textToSpeechUtility.setVoiceRate(normalizedValue);
 
       const output: HTMLOutputElement = outputElementsMap.get(
         voiceRateInputElement
@@ -202,10 +290,11 @@ function setSpeechUtteranceSettings(e: InputEvent): void {
       break;
     }
     case voicePitchInputElement: {
-      const MAX_SPEECH_PITCH: number = 2;
+      const normalizedValue: number =
+        (valueAsNumber * OptionsMaxValues.pitch) / 100;
 
-      const normalizedValue: number = (Number(value) * MAX_SPEECH_PITCH) / 100;
-      speechUtterance.pitch = normalizedValue;
+      options.pitch = normalizedValue;
+      textToSpeechUtility.setVoicePitch(normalizedValue);
 
       const output: HTMLOutputElement = outputElementsMap.get(
         voicePitchInputElement
@@ -217,15 +306,16 @@ function setSpeechUtteranceSettings(e: InputEvent): void {
     }
 
     case voiceVolumeInputElement: {
-      const MAX_SPEECH_VOLUME: number = 1;
+      const normalizedValue: number =
+        (valueAsNumber * OptionsMaxValues.volume) / 100;
 
-      const normalizedValue: number = (Number(value) * MAX_SPEECH_VOLUME) / 100;
-      speechUtterance.volume = normalizedValue;
+      textToSpeechUtility.setVolume(normalizedValue);
 
       const output: HTMLOutputElement = outputElementsMap.get(
         voiceVolumeInputElement
       );
 
+      options.volume = normalizedValue;
       output.textContent = `${value}%`;
 
       break;
@@ -233,13 +323,14 @@ function setSpeechUtteranceSettings(e: InputEvent): void {
     default:
       break;
   }
+
+  WebStorage.setKey("text-to-speech-options", options);
 }
 
-speechSynthesis.addEventListener("voiceschanged", populateVoicesMap);
+textToSpeechUtility.setOnVoicesChanged(populateVoicesMap);
 
-speechSynthesis.addEventListener("end", (e) => {});
 function populateVoicesMap(): void {
-  const voices: SpeechSynthesisVoice[] = speechSynthesis.getVoices();
+  const voices: SpeechSynthesisVoice[] = textToSpeechUtility.getVoices();
 
   let options: string = "";
   // Loop through all available voices
@@ -255,7 +346,7 @@ function populateVoicesMap(): void {
     languageVoices.push(voice);
 
     options += /* html */ `
-    <option value="${voice.name}">${voice.name}-${voice.lang}</option>
+    <option value="${voice.name}">${voice.name} _ ${voice.lang}</option>
     `;
   }
 
