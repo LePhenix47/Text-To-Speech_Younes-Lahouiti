@@ -5,15 +5,18 @@ import {
   setStyleProperty,
 } from "@utils/functions/helper-functions/dom.functions";
 
-import "./components/web-component.component";
-
 import { Options } from "@utils/types/options.types";
 import { OptionsMaxValues } from "@utils/variables/enums.variables";
 
 import { WebStorage } from "@lephenix47/webstorage-utility";
 import { TextToSpeech } from "@lephenix47/text-to-speech-utility";
 
+import { fixInputRangeBackground } from "@utils/functions/event-listeners/input-range-thumb-fix.functions";
+import { checkIfDefaultValuesAreSetInLocalStorage } from "@utils/functions/event-listeners/default-from-web-storage.functions";
+
 const textToSpeechUtility = new TextToSpeech();
+
+let indexOfCurrentWordSpoken: number = 0;
 
 const textAreaElement = selectQuery<HTMLTextAreaElement>("textarea");
 
@@ -38,15 +41,15 @@ const voiceVolumeOutputElement = selectQuery<HTMLOutputElement>(
 );
 
 const startSpeakingButton = selectQuery<HTMLButtonElement>(
-  "button[name=start-speaking]"
+  ".index__button--start"
+);
+
+const pauseSpeakingButton = selectQuery<HTMLButtonElement>(
+  ".index__button--pause"
 );
 
 const stopSpeakingButton = selectQuery<HTMLButtonElement>(
-  "button[name=stop-speaking]"
-);
-
-const restartCheckboxInput = selectQuery<HTMLInputElement>(
-  "input#restart-on-change"
+  ".index__button--stop"
 );
 
 // * Initalization
@@ -84,45 +87,9 @@ function populateOutputElementsMap(): void {
 }
 populateOutputElementsMap();
 
-function checkIfDefaultValuesAreSetInLocalStorage(): void {
-  const options: Options = WebStorage.getKey<Options>("text-to-speech-options");
-  if (options) {
-    return;
-  }
-
-  const defaultOptions: Options = {
-    pitch: 1,
-    rate: 1,
-    volume: 1,
-    text: "",
-  };
-
-  WebStorage.setKey("text-to-speech-options", defaultOptions);
-}
 checkIfDefaultValuesAreSetInLocalStorage();
 
 // * Event listeners
-function fixInputRangeBackground(): void {
-  const inputsWithThumbArray = selectQueryAll<HTMLInputElement>(
-    `input[type="range"][data-range="a-range-with-overflowing-thumb"]`
-  );
-
-  for (const input of inputsWithThumbArray) {
-    input.addEventListener("input", (e) => {
-      const input = e.currentTarget as HTMLInputElement;
-      const { max, valueAsNumber } = input;
-
-      const percentage: number = Math.round(
-        (valueAsNumber / Number(max)) * 100
-      );
-
-      const stringResult: string = `${percentage}%`;
-
-      input.style.setProperty("--_webkit-progression-width", stringResult);
-    });
-  }
-}
-
 fixInputRangeBackground();
 
 function addInputsEventListeners(): void {
@@ -133,7 +100,6 @@ function addInputsEventListeners(): void {
     element.addEventListener("input", setSpeechUtteranceSettings);
   }
 }
-addInputsEventListeners();
 
 function setDefaultValueIfPossible(
   element: HTMLTextAreaElement | HTMLSelectElement | HTMLInputElement
@@ -142,13 +108,16 @@ function setDefaultValueIfPossible(
     "text-to-speech-options"
   );
 
-  if (element instanceof HTMLSelectElement) {
-    return;
-  }
-
   let defaultValue = null;
 
   switch (element.name) {
+    case "voice-selection": {
+      const chosenVoice: SpeechSynthesisVoice = getChosenVoice(element.value);
+
+      textToSpeechUtility.setVoiceSpeech(chosenVoice);
+      break;
+    }
+
     case "voice-rate": {
       const output = outputElementsMap.get(element);
       output.textContent = rate.toString();
@@ -160,6 +129,7 @@ function setDefaultValueIfPossible(
         `${defaultValue}%`,
         element
       );
+      textToSpeechUtility.setVoiceRate(rate);
       break;
     }
     case "voice-pitch": {
@@ -173,6 +143,8 @@ function setDefaultValueIfPossible(
         `${defaultValue}%`,
         element
       );
+
+      textToSpeechUtility.setVoicePitch(pitch);
       break;
     }
     case "voice-volume": {
@@ -187,10 +159,14 @@ function setDefaultValueIfPossible(
         `${defaultValue}%`,
         element
       );
+
+      textToSpeechUtility.setVolume(volume);
       break;
     }
     case "text-to-read": {
       defaultValue = text;
+
+      textToSpeechUtility.setVoiceText(text);
       break;
     }
 
@@ -198,6 +174,8 @@ function setDefaultValueIfPossible(
       throw new Error("Unknown property to change");
     }
   }
+
+  textToSpeechUtility.setVoiceSpeech;
 
   console.log(element.name, { defaultValue });
 
@@ -216,46 +194,64 @@ function getChosenVoice(value: string): SpeechSynthesisVoice {
   return chosenVoice;
 }
 
-function setSpeechUtterance(e: InputEvent) {
-  //   setSpeechUtteranceSettings(e);
+function setSpeechUtterance(e: InputEvent) {}
 
-  restartSpeaking();
+function logTTS(): void {
+  // @ts-ignore
+  console.log(textToSpeechUtility.utterance);
 }
 
-function restartSpeaking(): void {
-  if (!restartCheckboxInput.checked) {
+function startSpeech(): void {
+  console.log("Starting speech");
+  const { isPaused, isSpeaking } = textToSpeechUtility;
+
+  if (isPaused && isSpeaking) {
+    textToSpeechUtility.resumeSpeech();
+    logTTS();
+
     return;
   }
+
+  if (!isPaused && isSpeaking) {
+    logTTS();
+
+    return;
+  }
+
+  textToSpeechUtility.speak();
+  logTTS();
 }
 
-function togglePauseButton(e: MouseEvent): void {
-  const button = e.target as HTMLButtonElement;
+function pauseSpeech(): void {
+  console.log("Pausing speech");
 
   const { isPaused, isSpeaking, isPending } = textToSpeechUtility;
-
-  if (!isSpeaking && !isPending) {
-    textToSpeechUtility.speak();
-
-    button.textContent = "Pause";
+  if (!isSpeaking) {
     return;
   }
 
-  if (isPaused) {
-    textToSpeechUtility.resumeSpeech();
-
-    button.textContent = "Pause";
-  } else {
-    textToSpeechUtility.cancelSpeech();
-
-    button.textContent = "Resume";
-  }
+  textToSpeechUtility.pauseSpeech();
+  logTTS();
 }
 
 function stopSpeech(): void {
+  console.log("Stopping speech");
+  textToSpeechUtility.resumeSpeech();
+
   textToSpeechUtility.cancelSpeech();
+  logTTS();
 }
 
+function updateText(): void {
+  textToSpeechUtility.setVoiceText(
+    textAreaElement.value.substring(indexOfCurrentWordSpoken)
+  );
+
+  console.log(textAreaElement.value.substring(indexOfCurrentWordSpoken));
+}
 function setSpeechUtteranceSettings(e: InputEvent): void {
+  stopSpeech();
+
   const { value, valueAsNumber } = e.target as HTMLInputElement;
 
   const options = WebStorage.getKey<Options>("text-to-speech-options");
@@ -263,7 +259,6 @@ function setSpeechUtteranceSettings(e: InputEvent): void {
   switch (e.target) {
     case textAreaElement: {
       options.text = value;
-      textToSpeechUtility.setVoiceText(value);
 
       break;
     }
@@ -325,9 +320,22 @@ function setSpeechUtteranceSettings(e: InputEvent): void {
   }
 
   WebStorage.setKey("text-to-speech-options", options);
+
+  updateText();
+  // @ts-ignore
+  console.log(textToSpeechUtility.utterance.text);
+
+  startSpeech();
 }
 
-textToSpeechUtility.setOnVoicesChanged(populateVoicesMap);
+textToSpeechUtility.setOnVoicesChanged(() => {
+  populateVoicesMap();
+  addInputsEventListeners();
+});
+
+textToSpeechUtility.setOnBoundary((e: SpeechSynthesisEvent) => {
+  indexOfCurrentWordSpoken = e.charIndex;
+});
 
 function populateVoicesMap(): void {
   const voices: SpeechSynthesisVoice[] = textToSpeechUtility.getVoices();
@@ -353,5 +361,16 @@ function populateVoicesMap(): void {
   voiceSelectionElement.insertAdjacentHTML("beforeend", options);
 }
 
-startSpeakingButton.addEventListener("click", togglePauseButton);
-stopSpeakingButton.addEventListener("click", stopSpeech);
+startSpeakingButton.addEventListener("click", () => {
+  indexOfCurrentWordSpoken = 0;
+  startSpeech();
+});
+pauseSpeakingButton.addEventListener("click", () => {
+  indexOfCurrentWordSpoken = 0;
+  pauseSpeech();
+});
+stopSpeakingButton.addEventListener("click", () => {
+  indexOfCurrentWordSpoken = 0;
+  stopSpeech();
+  updateText();
+});
